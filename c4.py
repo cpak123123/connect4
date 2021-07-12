@@ -4,12 +4,14 @@ Created on Sat Jul  3 22:31:23 2021
 
 @author: cpak1
 """
+from c4AI import State
 from collections import defaultdict
 class Tile():
         def __init__(self, x, y, color = "o"):
                 self.color = color
                 self.x = x
                 self.y = y
+                self.winner = None
         
 class Board():
         def __init__(self):
@@ -42,13 +44,22 @@ class Game():
                 self.cc = cc
                 self.running = running
                 self.value = 0
+                self.hist = []
         def chck_turn(self):
                 if self.turn %2 == 0:
                         self.cc = "y"
                 if self.turn %2 != 0:
                         self.cc = "r"
+        def val_move(self, column):
+                if 'o' not in [x[column].color for x in self.board.state]:
+                        return False
+                return True
         def move(self, column):
                 col_stat = [x[column] for x in self.board.state]
+                if not self.val_move(column):
+                        print("try_again")
+                        return
+                        
                 for i, tile in enumerate(col_stat):
                         if i < len(col_stat)-1:
                                 if tile.color == "o" and col_stat[i+1].color == "o":
@@ -59,10 +70,12 @@ class Game():
                         if i == len(col_stat)-1:
                                 self.board.state[i][column] = Tile(i, column, color = self.cc)
                 self.turn += 1
+                self.hist.append(self.board.state)
                 self.chck_go()
-                self.chck_turn()                      
-                        
-        def chck_go(self):
+                self.chck_turn()
+                return self.board.state
+                                                    
+        def chck_go(self, proofer = None):
                 #column checkk
                 r_win = ['r','r','r','r']
                 y_win = ['y','y','y','y']
@@ -76,11 +89,13 @@ class Game():
                         if y_won:
                                 print("games over, yellow won lma")
                                 self.board.print_board()
+                                self.winner = 'y'
                                 self.running = False
                                 return
                         if r_won:
                                 print("games over, red won")
                                 self.board.print_board()
+                                self.winner = 'r'
                                 self.running = False
                                 return
                 #row checkkk
@@ -94,11 +109,13 @@ class Game():
                         if y_won:
                                 print("games over, yellow won lma")
                                 self.board.print_board()
+                                self.winner= 'y'
                                 self.running = False
                                 return
                         if r_won:
                                 print("games over, red won")
                                 self.board.print_board()
+                                self.winner = 'w'
                                 self.running = False
                                 return
                 #diag check:
@@ -122,11 +139,13 @@ class Game():
                         if y_won:
                                 print("games over, yellow won ")
                                 self.board.print_board()
+                                self.winner = 'y'
                                 self.running = False
                                 return
                         if r_won:
                                 print("games over, red won")
                                 self.board.print_board()
+                                self.winner = 'r'
                                 self.running = False
                                 return
                 
@@ -134,12 +153,14 @@ class Game():
                         print("its a draw")
                         self.running = False
                         return
-                
+                return "cont"
                         
 game = Game()
+ai = State(game)
 print("welcome to connect four!")
 while game.running:
         game.board.print_board()
         move = input("pick a column to place your tile!")
         game.move(int(move)-1)
-        
+        ai.game = game
+        print("current eval of yellow: ", ai.eval_board())
